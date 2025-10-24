@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from '../config.js';
+import { JWT } from '../config.js';
 
-export const verifyToken = (req, res, next) => {
+export const verificacionToken = (req, res, next) => {
   const header = req.headers['authorization'];
 
   if (!header) {
@@ -11,8 +11,8 @@ export const verifyToken = (req, res, next) => {
   const token = header.split(' ')[1]; // formato: Bearer <token>
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.usuario = decoded; // ahora todas las rutas protegidas sabrán quién es el usuario
+    const decoded = jwt.verify(token, JWT);
+    req.usuario = decoded; // COn esto ahora todas las rutas protegidas sabrán quién es el usuario
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Token inválido o expirado' });
