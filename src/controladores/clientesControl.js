@@ -37,6 +37,7 @@ export const getClientesxID = async (req, res) => {
 //se envia un objeto en el cuerpo cada que se hace un post
 export const postCliente = async (req, res) => {
     try {
+        
         const { cli_identificacion, cli_nombre, cli_telefono, cli_correo, cli_direccion, cli_pais, cli_ciudad } = req.body
         //console.log(req.body)
         const [result] = await conmysql.query(
