@@ -1,34 +1,41 @@
 import express from 'express'
 import cors from 'cors'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
-//importar las rutas OJO
+// importar las rutas
 import clientesRouters from './routes/clientes.routes.js'
 import prodRouters from './routes/prod.routes.js'
 import autentiRouters from './routes/autenti.routes.js'
 import usuRouters from './routes/usu.routes.js'
 import pedidosRoutes from './routes/pedidos.routes.js'
 
-const app = express();
-app.use(express.json()); //la app trabajara con json
+// ✅ Corrección de __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+const app = express()
+app.use(express.json())
+app.use(express.urlencoded({ extended: true })) // permite formularios
 
 const corsOptions = {
-    origin: '*',   //direccion del dominio va aqui o todas las que se usaran
-    methods:['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],         //metdoos que le doy permiso
-    credentials:true     //habilitar credenciales
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  credentials: true
 }
-app.use(cors());
+app.use(cors(corsOptions))
 
-// indicar las rutas a utilizar OJO
+// ✅ Esta línea no la necesitas si usas Cloudinary
+// app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
 app.use('/api', clientesRouters)
 app.use('/api', prodRouters)
-app.use('/api/autenti', autentiRouters);
+app.use('/api/autenti', autentiRouters)
 app.use('/api', usuRouters)
 app.use('/api', pedidosRoutes)
 
-app.use((req, resp, next) => {
-    resp.status(400).json({
-        message: 'Endpoint not fount'
-    })
+app.use((req, resp) => {
+  resp.status(404).json({ message: 'Endpoint not found' })
 })
 
-export default app;
+export default app
