@@ -4,6 +4,7 @@ import { JWT_SECRET } from '../config.js';
 import crypto from 'crypto';
 
 // 🔐 LOGIN
+// ✅ Actualización para reflejar estado:1 en Render - no borrar
 export const login = async (req, res) => {
   const { usr_usuario, usr_clave } = req.body;
 
