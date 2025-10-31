@@ -15,18 +15,14 @@ export const login = async (req, res) => {
     );
 
     if (rows.length === 0) {
-      // 🟥 Usuario no existe
-      return res.status(404).json({ estado: 0, error: 'Usuario no encontrado' });
+      return res.status(404).json({ estado: 0, mensaje: 'Usuario no encontrado' });
     }
 
     const usuario = rows[0];
-
-    // Calcular hash MD5 de la clave ingresada
     const hashIngresado = crypto.createHash('md5').update(usr_clave).digest('hex');
 
     if (hashIngresado !== usuario.usr_clave) {
-      // 🟥 Contraseña incorrecta
-      return res.status(401).json({ estado: 0, error: 'Contraseña incorrecta' });
+      return res.status(401).json({ estado: 0, mensaje: 'Contraseña incorrecta' });
     }
 
     // 🟢 Usuario válido → generar token JWT
@@ -40,7 +36,7 @@ export const login = async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    // ✅ Respuesta exitosa
+    // ✅ Respuesta exitosa con el formato esperado por tu app
     res.json({
       estado: 1,
       mensaje: 'Login exitoso',
@@ -54,6 +50,6 @@ export const login = async (req, res) => {
 
   } catch (error) {
     console.error('🔴 Error en login:', error);
-    res.status(500).json({ estado: 0, error: 'Error interno del servidor' });
+    res.status(500).json({ estado: 0, mensaje: 'Error interno del servidor' });
   }
 };
