@@ -1,32 +1,32 @@
 import { conmysql } from '../db.js'
 
 export const getProd = async (req, res) => {
-    try {
-        const [result] = await conmysql.query(' select * from productos')   //es consulta el query
-        res.json({
-            cantidad: result.length,
-            data: result
-        })
-        // res.json(result)
-    } catch (error) {
-        return res.status(500).json({ message: "Error en el servidor" })
-    }
+  try {
+    const [result] = await conmysql.query(' select * from productos')   //es consulta el query
+    res.json({
+      cantidad: result.length,
+      data: result
+    })
+    // res.json(result)
+  } catch (error) {
+    return res.status(500).json({ message: "Error en el servidor" })
+  }
 }
 
 export const getProdxID = async (req, res) => {
-    try {
-        const [result] = await conmysql.query(' select * from productos where prod_id =?', [req.params.id])   //es consulta el query
-        if (result.length <= 0) return res.json({
-            cantidad: 0,
-            message: "Producto no encontrado"
-        })
-        res.json({
-            cantidad: result.length,
-            dataProd: result[0]
-        })
-    } catch (error) {
-        return res.status(500).json({ message: "Error en el servidor" })
-    }
+  try {
+    const [result] = await conmysql.query(' select * from productos where prod_id =?', [req.params.id])   //es consulta el query
+    if (result.length <= 0) return res.json({
+      cantidad: 0,
+      message: "Producto no encontrado"
+    })
+    res.json({
+      cantidad: result.length,
+      dataProd: result[0]
+    })
+  } catch (error) {
+    return res.status(500).json({ message: "Error en el servidor" })
+  }
 }
 
 //funcion para insertar un cliente   insert es con post   put es para todos los datos con un update y push con un solo objeto
@@ -72,7 +72,7 @@ export const putProd = async (req, res) => {
     const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body
     let prod_imagen = req.file?.path || null // ✅ URL Cloudinary
 
-    const activo = (prod_activo === 'true' || prod_activo === true) ? 1 : 0
+    const activo = (prod_activo === '1' || prod_activo === 1 || prod_activo === true || prod_activo === 'true') ? 1 : 0;
 
     // Validar código duplicado
     const [existeCodigo] = await conmysql.query(
@@ -115,15 +115,15 @@ export const putProd = async (req, res) => {
 
 //funcion para eliminar
 export const deleteProd = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const [result] = await conmysql.query('DELETE FROM productos WHERE prod_id = ?', [id]);
-        if (result.affectedRows <= 0) {
-            return res.status(404).json({ message: "Producto no encontrado" });
-        }
-        res.json({ message: "Producto eliminado correctamente" });
-    } catch (error) {
-        console.error("Error en deleteProd:", error);
-        return res.status(500).json({ message: "Error en el servidor" });
+  try {
+    const { id } = req.params;
+    const [result] = await conmysql.query('DELETE FROM productos WHERE prod_id = ?', [id]);
+    if (result.affectedRows <= 0) {
+      return res.status(404).json({ message: "Producto no encontrado" });
     }
+    res.json({ message: "Producto eliminado correctamente" });
+  } catch (error) {
+    console.error("Error en deleteProd:", error);
+    return res.status(500).json({ message: "Error en el servidor" });
+  }
 }
