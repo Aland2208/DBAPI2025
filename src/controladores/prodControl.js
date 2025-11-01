@@ -36,7 +36,12 @@ export const postProd = async (req, res) => {
     const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body
     const prod_imagen = req.file?.path || null // ✅ URL de Cloudinary
 
-    const activo = String(prod_activo).toLowerCase() === 'true' || prod_activo === '1' ? 1 : 0;
+    // 🟢 Interpretar correctamente el valor de prod_activo
+    let activo = 0;
+    const valor = (req.body.prod_activo || '').toString().trim().toLowerCase();
+    if (valor === '1' || valor === 'true' || valor === 'on' || valor === 'checked') {
+      activo = 1;
+    }
 
     // Verificar duplicado
     const [existe] = await conmysql.query(
@@ -72,9 +77,10 @@ export const putProd = async (req, res) => {
     const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body
     let prod_imagen = req.file?.path || null // ✅ URL Cloudinary
 
-    console.log("🟢 Valor recibido prod_activo:", prod_activo);
+    // 🟢 Interpretar correctamente el valor de prod_activo
     let activo = 0;
-    if (prod_activo === 1 || prod_activo === '1' || prod_activo === true || String(prod_activo).toLowerCase() === 'true') {
+    const valor = (req.body.prod_activo || '').toString().trim().toLowerCase();
+    if (valor === '1' || valor === 'true' || valor === 'on' || valor === 'checked') {
       activo = 1;
     }
 
