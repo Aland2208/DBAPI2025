@@ -57,11 +57,14 @@ export const postProd = async (req, res) => {
       [prod_codigo, prod_nombre, prod_stock, prod_precio, activo, prod_imagen]
     )
 
+    // 🟢 Nuevo formato de respuesta
     res.status(201).json({
       estado: 1,
       mensaje: 'Producto registrado exitosamente',
-      prod_id: result.insertId,
-      imagen: prod_imagen
+      data: {
+        prod_id: result.insertId,
+        prod_imagen: prod_imagen
+      }
     })
   } catch (error) {
     console.error('Error en postProd:', error)
