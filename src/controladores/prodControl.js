@@ -36,7 +36,7 @@ export const postProd = async (req, res) => {
     const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body
     const prod_imagen = req.file?.path || null // ✅ URL de Cloudinary
 
-    const activo = (prod_activo === 'true' || prod_activo === true) ? 1 : 0
+    const activo = String(prod_activo).toLowerCase() === 'true' || prod_activo === '1' ? 1 : 0;
 
     // Verificar duplicado
     const [existe] = await conmysql.query(
@@ -72,7 +72,7 @@ export const putProd = async (req, res) => {
     const { prod_codigo, prod_nombre, prod_stock, prod_precio, prod_activo } = req.body
     let prod_imagen = req.file?.path || null // ✅ URL Cloudinary
 
-    const activo = (prod_activo === '1' || prod_activo === 1 || prod_activo === true || prod_activo === 'true') ? 1 : 0;
+    const activo = String(prod_activo).toLowerCase() === 'true' || prod_activo === '1' ? 1 : 0;
 
     // Validar código duplicado
     const [existeCodigo] = await conmysql.query(
