@@ -118,46 +118,61 @@ export const getPedidosxID = async (req, res) => {
 
 
 export const postPedido = async (req, res) => {
-    const connection = await conmysql.getConnection(); // Para usar transacciones
-    try {
-        const { cli_id, usr_id, detalles } = req.body;
-        /**
-         * Estructura esperada del body:
-         * {
-         *   "cli_id": 1,
-         *   "usr_id": 2,
-         *   "productos": [
-         *      { "prod_id": 10, "det_cantidad": 2, "det_precio": 5.50 },
-         *      { "prod_id": 15, "det_cantidad": 1, "det_precio": 12.00 }
-         *   ]
-         * }
-         */
+  const connection = await conmysql.getConnection();
+  try {
+    const { cli_id, usr_id, detalles } = req.body;
 
-        await connection.beginTransaction();
-
-        // 1. Insertar el pedido
-        const [pedidoResult] = await connection.query(
-            'INSERT INTO pedidos (cli_id, ped_fecha, usr_id, ped_estado) VALUES (?, NOW(), ?, 1)',
-            [cli_id, usr_id]
-        );
-        const ped_id = pedidoResult.insertId;
-
-        // 2. Insertar los detalles del pedido
-        for (const producto of detalles) {
-            const { prod_id, det_cantidad, det_precio } = producto;
-            await connection.query(
-                'INSERT INTO pedidos_detalle (prod_id, ped_id, det_cantidad, det_precio) VALUES (?,?,?,?)',
-                [prod_id, ped_id, det_cantidad, det_precio]
-            );
-        }
-
-        await connection.commit();
-        res.status(201).json({ message: "Pedido registrado correctamente", ped_id });
-    } catch (error) {
-        await connection.rollback();
-        console.error("Error al registrar el pedido:", error);
-        return res.status(500).json({ message: "Error en el servidor" });
-    } finally {
-        connection.release();
+    // ✅ Validaciones claras
+    if (!cli_id || !usr_id) {
+      return res.status(400).json({ message: "cli_id y usr_id son obligatorios" });
     }
+    if (!Array.isArray(detalles) || detalles.length === 0) {
+      return res.status(400).json({ message: "detalles debe ser un arreglo con al menos 1 ítem" });
+    }
+
+    // ✅ Normaliza y valida cada detalle
+    const filas = [];
+    for (const item of detalles) {
+      const prod_id = Number(item?.prod_id);
+      const det_cantidad = Number(item?.det_cantidad);
+      const det_precio = Number(item?.det_precio);
+
+      if (!prod_id || !det_cantidad || det_cantidad < 1 || isNaN(det_precio)) {
+        return res.status(400).json({
+          message: "Cada detalle debe tener prod_id, det_cantidad>=1 y det_precio numérico",
+          detalle_recibido: item
+        });
+      }
+      filas.push([prod_id, det_cantidad, det_precio]);
+    }
+
+    await connection.beginTransaction();
+
+    // 1) Pedido maestro
+    const [pedidoResult] = await connection.query(
+      'INSERT INTO pedidos (cli_id, ped_fecha, usr_id, ped_estado) VALUES (?, NOW(), ?, 1)',
+      [cli_id, usr_id]
+    );
+    const ped_id = pedidoResult.insertId;
+
+    // 2) Detalles (bulk insert)
+    // construimos VALUES (?, ?, ?, ?), (?, ?, ?, ?), ...
+    const placeholders = filas.map(() => '(?, ?, ?, ?)').join(', ');
+    const values = filas.flatMap(([prod_id, det_cantidad, det_precio]) => [prod_id, ped_id, det_cantidad, det_precio]);
+
+    await connection.query(
+      `INSERT INTO pedidos_detalle (prod_id, ped_id, det_cantidad, det_precio) VALUES ${placeholders}`,
+      values
+    );
+
+    await connection.commit();
+    res.status(201).json({ message: "Pedido registrado correctamente", ped_id });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al registrar el pedido:", error);
+    return res.status(500).json({ message: "Error en el servidor" });
+  } finally {
+    connection.release();
+  }
 };
+
