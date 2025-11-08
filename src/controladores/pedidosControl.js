@@ -1,6 +1,8 @@
 import { conmysql } from '../db.js';
 
-// ✅ Obtener todos los pedidos con sus detalles
+// ======================================================
+// 🟢 Obtener todos los pedidos con sus detalles
+// ======================================================
 export const getPedidos = async (req, res) => {
     try {
         const [pedidos] = await conmysql.query(`
@@ -47,10 +49,13 @@ export const getPedidos = async (req, res) => {
     }
 };
 
-// ✅ Obtener pedido por ID
+// ======================================================
+// 🟢 Obtener pedido por ID
+// ======================================================
 export const getPedidosxID = async (req, res) => {
     try {
         const { id } = req.params;
+
         const [pedidoResult] = await conmysql.query(`
       SELECT 
           p.ped_id,
@@ -91,7 +96,9 @@ export const getPedidosxID = async (req, res) => {
     }
 };
 
-// ✅ Registrar pedido con sus detalles
+// ======================================================
+// 🟢 Crear pedido con detalles
+// ======================================================
 export const postPedido = async (req, res) => {
     const connection = await conmysql.getConnection();
     try {
@@ -101,23 +108,26 @@ export const postPedido = async (req, res) => {
             return res.status(400).json({ message: 'cli_id y usr_id son obligatorios' });
 
         if (!Array.isArray(detalles) || detalles.length === 0)
-            return res.status(400).json({ message: 'detalles debe tener al menos 1 producto' });
+            return res.status(400).json({ message: 'detalles debe contener al menos 1 producto' });
 
         await connection.beginTransaction();
 
+        // 🟢 Insertar pedido principal
         const [pedidoResult] = await connection.query(
             'INSERT INTO pedidos (cli_id, ped_fecha, usr_id, ped_estado) VALUES (?, NOW(), ?, 1)',
             [cli_id, usr_id]
         );
         const ped_id = pedidoResult.insertId;
 
+        // 🟢 Insertar cada producto del carrito
         for (const item of detalles) {
             const prod_id = Number(item.prod_id);
             const det_cantidad = Number(item.det_cantidad);
             const det_precio = Number(item.det_precio);
 
-            if (!prod_id || det_cantidad <= 0 || isNaN(det_precio))
-                throw new Error(`Error en detalle: ${JSON.stringify(item)}`);
+            if (!prod_id || det_cantidad <= 0 || isNaN(det_precio)) {
+                throw new Error(`Datos inválidos en detalle: ${JSON.stringify(item)}`);
+            }
 
             await connection.query(
                 'INSERT INTO pedidos_detalle (prod_id, ped_id, det_cantidad, det_precio) VALUES (?, ?, ?, ?)',
@@ -126,7 +136,7 @@ export const postPedido = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(201).json({ message: 'Pedido registrado correctamente', ped_id });
+        res.status(201).json({ message: '✅ Pedido registrado correctamente', ped_id });
     } catch (error) {
         await connection.rollback();
         console.error('❌ Error al registrar pedido:', error);
