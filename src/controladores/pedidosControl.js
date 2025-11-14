@@ -1,8 +1,8 @@
 import { conmysql } from '../db.js';
 
-// ======================================================
-// ✅ Obtener todos los pedidos con sus detalles
-// ======================================================
+
+// Obtener todos los pedidos con sus detalles
+
 export const getPedidos = async (req, res) => {
     try {
         const [pedidos] = await conmysql.query(`
@@ -36,14 +36,14 @@ export const getPedidos = async (req, res) => {
 
         res.json({ cantidad: pedidosConDetalles.length, data: pedidosConDetalles });
     } catch (error) {
-        console.error('❌ Error en getPedidos:', error);
+        console.error(' Error en getPedidos:', error);
         res.status(500).json({ message: 'Error en el servidor' });
     }
 };
 
-// ======================================================
-// ✅ Obtener pedido por ID
-// ======================================================
+
+// Obtener pedido por ID
+
 export const getPedidosxID = async (req, res) => {
     try {
         const { id } = req.params;
@@ -65,20 +65,20 @@ export const getPedidosxID = async (req, res) => {
 
         res.json({ ...pedido[0], detalles });
     } catch (error) {
-        console.error('❌ Error en getPedidosxID:', error);
+        console.error('Error en getPedidosxID:', error);
         res.status(500).json({ message: 'Error en el servidor' });
     }
 };
 
-// ======================================================
-// ✅ Registrar pedido y sus detalles
-// ======================================================
+
+// Registrar pedido y sus detalles
+
 export const postPedido = async (req, res) => {
     const connection = await conmysql.getConnection();
     try {
         const { cli_id, usr_id, ped_estado, detalles } = req.body;
 
-        console.log('🟢 Datos recibidos desde frontend:', req.body);
+       
 
         if (!cli_id || !usr_id)
             return res.status(400).json({ message: 'cli_id y usr_id son obligatorios' });
@@ -88,7 +88,7 @@ export const postPedido = async (req, res) => {
 
         await connection.beginTransaction();
 
-        // 🟢 Insertar pedido
+        // Insertar pedido
         const [resultPedido] = await connection.query(
             `INSERT INTO pedidos (cli_id, ped_fecha, usr_id, ped_estado)
        VALUES (?, NOW(), ?, ?)`,
@@ -96,16 +96,16 @@ export const postPedido = async (req, res) => {
         );
 
         const ped_id = resultPedido.insertId;
-        console.log('✅ Pedido insertado con ID:', ped_id);
+      //  console.log('✅ Pedido insertado con ID:', ped_id);
 
-        // 🟢 Insertar detalles
+        // Insertar detalles
         for (const item of detalles) {
             const prod_id = Number(item.prod_id);
             const det_cantidad = Number(item.det_cantidad);
             const det_precio = Number(item.det_precio);
 
             if (!prod_id || det_cantidad <= 0 || isNaN(det_precio)) {
-                console.error('⚠️ Detalle inválido:', item);
+                console.error(' Detalle inválido:', item);
                 throw new Error('Datos de producto inválidos');
             }
 
@@ -118,14 +118,42 @@ export const postPedido = async (req, res) => {
 
         await connection.commit();
         res.status(201).json({
-            message: '✅ Pedido y detalles registrados correctamente',
+            message: ' Pedido y detalles registrados correctamente',
             ped_id,
         });
     } catch (error) {
         await connection.rollback();
-        console.error('❌ Error al registrar pedido:', error);
+        console.error(' Error al registrar pedido:', error);
         res.status(500).json({ message: error.message });
     } finally {
         connection.release();
+    }
+};
+
+export const getPedidosPorFecha = async (req, res) => {
+    try {
+        const { inicio, fin } = req.query;
+
+        if (!inicio || !fin) {
+            return res.status(400).json({ message: "Debe enviar fecha inicio y fecha fin" });
+        }
+
+        const [pedidos] = await conmysql.query(`
+      SELECT 
+        p.ped_id, p.cli_id, c.cli_nombre, 
+        p.ped_fecha, p.usr_id, u.usr_nombre, 
+        p.ped_estado
+      FROM pedidos p
+      LEFT JOIN clientes c ON p.cli_id = c.cli_id
+      LEFT JOIN usuarios u ON p.usr_id = u.usr_id
+      WHERE DATE(p.ped_fecha) BETWEEN ? AND ?
+      ORDER BY p.ped_fecha DESC
+    `, [inicio, fin]);
+
+        res.json({ cantidad: pedidos.length, data: pedidos });
+
+    } catch (error) {
+        console.error(" Error en getPedidosPorFecha:", error);
+        res.status(500).json({ message: "Error en el servidor" });
     }
 };
